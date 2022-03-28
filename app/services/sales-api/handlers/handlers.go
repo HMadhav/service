@@ -8,6 +8,7 @@ import (
 
 	"github.com/HMadhav/service/app/services/sales-api/handlers/debug/checkgrp"
 	"github.com/HMadhav/service/app/services/sales-api/handlers/v1/testgrp"
+	"github.com/HMadhav/service/business/sys/auth"
 	"github.com/HMadhav/service/business/web/mid"
 	"github.com/HMadhav/service/foundation/web"
 	"go.uber.org/zap"
@@ -44,6 +45,7 @@ func DebugMux(build string, log *zap.SugaredLogger) http.Handler {
 // APIMuxConfig contains all the mandatory systems required by handlers.
 type APIMuxConfig struct {
 	Shutdown chan os.Signal
+	Auth     *auth.Auth
 	Log      *zap.SugaredLogger
 }
 
@@ -64,4 +66,5 @@ func v1(app *web.App, cfg APIMuxConfig) {
 		Log: cfg.Log,
 	}
 	app.Handle(http.MethodGet, version, "/test", tgh.Test)
+	app.Handle(http.MethodGet, version, "/testauth", tgh.Test, mid.Authenticate(cfg.Auth), mid.Authorize("ADMIN"))
 }

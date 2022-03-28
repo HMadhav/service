@@ -13,6 +13,8 @@ import (
 	"time"
 
 	"github.com/HMadhav/service/app/services/sales-api/handlers"
+	"github.com/HMadhav/service/business/sys/auth"
+	"github.com/HMadhav/service/foundation/keystore"
 	"github.com/HMadhav/service/foundation/logger"
 	"github.com/ardanlabs/conf/v3"
 	"go.uber.org/automaxprocs/maxprocs"
@@ -66,6 +68,10 @@ func run(log *zap.SugaredLogger) error {
 			APIHost         string        `conf:"default:0.0.0.0:3001"`
 			DebugHost       string        `conf:"default:0.0.0.0:4000"`
 		}
+		Auth struct {
+			KeysFolder string `conf:"default:zarf/keys/"`
+			ActiveKID  string `conf:"default:54bb2165-71e1-41a6-af3e-7da4a0e1e2c1"`
+		}
 	}{
 		Version: conf.Version{
 			Build: build,
@@ -95,6 +101,23 @@ func run(log *zap.SugaredLogger) error {
 	log.Infow("startup", "config", out)
 
 	expvar.NewString("build").Set(build)
+
+	// =========================================================================
+	// Initialize authentication support
+
+	log.Infow("startup", "status", "initializing authentication support")
+
+	// Construct a key store based on the key files stored in
+	// the specified directory.
+	ks, err := keystore.NewFS(os.DirFS(cfg.Auth.KeysFolder))
+	if err != nil {
+		return fmt.Errorf("reading keys: %w", err)
+	}
+
+	auth, err := auth.New(cfg.Auth.ActiveKID, ks)
+	if err != nil {
+		return fmt.Errorf("constructing auth: %w", err)
+	}
 
 	// ======================================Start Debug Service=============================
 
@@ -126,6 +149,7 @@ func run(log *zap.SugaredLogger) error {
 	// Construct a server to service the requests against the mux.
 	apiMux := handlers.APIMux(handlers.APIMuxConfig{
 		Shutdown: shutdown,
+		Auth:     auth,
 		Log:      log,
 	})
 
