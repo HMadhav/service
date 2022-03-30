@@ -11,6 +11,7 @@ import (
 	"github.com/HMadhav/service/business/sys/auth"
 	"github.com/HMadhav/service/business/web/mid"
 	"github.com/HMadhav/service/foundation/web"
+	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
 )
 
@@ -28,13 +29,14 @@ func DebugStandardLibraryMux() *http.ServeMux {
 	return mux
 }
 
-func DebugMux(build string, log *zap.SugaredLogger) http.Handler {
+func DebugMux(build string, log *zap.SugaredLogger, db *sqlx.DB) http.Handler {
 	mux := DebugStandardLibraryMux()
 
 	// Register debug check endpoints.
 	cgh := checkgrp.Handlers{
 		Build: build,
 		Log:   log,
+		DB:    db,
 	}
 	mux.HandleFunc("/debug/readiness", cgh.Readiness)
 	mux.HandleFunc("/debug/liveness", cgh.Liveness)
@@ -47,6 +49,7 @@ type APIMuxConfig struct {
 	Shutdown chan os.Signal
 	Auth     *auth.Auth
 	Log      *zap.SugaredLogger
+	DB       *sqlx.DB
 }
 
 // APIMux constructs a http.Handler with all application routes defined.
