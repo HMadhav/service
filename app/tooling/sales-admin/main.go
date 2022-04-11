@@ -54,6 +54,7 @@ func main() {
 
 	//Hard coded the data according to database
 	// userID := "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+	//kid Id
 	// kid := "54bb2165-71e1-41a6-af3e-7da4a0e1e2c1"
 
 	// if err := GenToken(log, cfg, userID, kid); err != nil {
